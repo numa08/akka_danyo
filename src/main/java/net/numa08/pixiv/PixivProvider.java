@@ -3,9 +3,11 @@ package net.numa08.pixiv;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.dispatch.Futures;
 import akka.dispatch.Mapper;
 import akka.dispatch.OnSuccess;
 import akka.util.Timeout;
+import net.numa08.image.ImageDownloader;
 import net.numa08.provider.DejikoProvider;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
@@ -15,6 +17,9 @@ import scala.reflect.ClassTag;
 import scala.reflect.ClassTag$;
 import scala.runtime.AbstractFunction0;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static akka.pattern.Patterns.ask;
@@ -31,7 +36,21 @@ public class PixivProvider implements DejikoProvider{
         final FiniteDuration duration = Duration.create(5, TimeUnit.MINUTES);
         final Timeout timeout = new Timeout(duration);
         final Future<Object> result = ask(actor, message, timeout);
-        int retval = (int)Await.result(result, duration);
-        return retval;
+        final List<String> imageUrls = (List<String>)Await.result(result, duration);
+        System.out.println("url count is " + imageUrls.size());
+        final ActorRef imageDownloadActor = actorSystem.actorOf(Props.create(ImageDownloader.class));
+        final List<Future<Object>> downloadResults = new ArrayList<>();
+        final File targetDir = new File(path);
+
+        if (!targetDir.exists()) {
+            targetDir.mkdir();
+        }
+        for(String url : imageUrls) {
+            final ImageDownloader.GetImages mes = new ImageDownloader.GetImages(url, path);
+            downloadResults.add(ask(imageDownloadActor, mes, timeout));
+        }
+        final Future<Iterable<Object>> aggregate = Futures.sequence(downloadResults, actorSystem.dispatcher());
+        Await.result(aggregate, duration);
+        return 0;
     }
 }

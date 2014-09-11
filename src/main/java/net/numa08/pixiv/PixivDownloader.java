@@ -1,27 +1,30 @@
 package net.numa08.pixiv;
 
 import akka.actor.UntypedActor;
+import scala.io.Codec;
+import scala.io.Source;
+
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PixivDownloader extends UntypedActor {
+
+    private static final int IllustColumn = 9;
 
     @Override
     public void onReceive(Object message) throws Exception {
         if (message instanceof GetCSV) {
-//            System.out.println("connected");
-//            final String[] csv = Jsoup.connect(((GetCSV)message).url)
-//                                       .get()
-//                                       .body()
-//                                       .toString()
-//                                       .split("\n");
-//            System.out.println("on receive");
-//
-//            for (String line : csv) {
-//                final String u = line.split(",")[11];
-//                System.out.println(u);
-//            }
-            getSender().tell(1, getSelf());
-        } else if (message instanceof GetImage) {
-            getSender().tell("ok", getSelf());
+            final GetCSV letter = (GetCSV)message;
+            final URL url = new URL(letter.url);
+            final String document = Source.fromURL(url, Codec.UTF8()).mkString();
+
+            final List<String> urls = new ArrayList<>();
+            for (String line : document.split("\\n")) {
+                final String u = line.split(",")[IllustColumn].replace("\"", "");
+                urls.add(u);
+            }
+            getSender().tell(urls, getSelf());
         } else {
             unhandled(message);
         }
@@ -39,15 +42,4 @@ public class PixivDownloader extends UntypedActor {
         }
     }
 
-    public static final class GetImage {
-        private final String url;
-
-        public GetImage(String url) {
-            this.url = url;
-        }
-
-        public String getUrl() {
-            return url;
-        }
-    }
 }
