@@ -11,8 +11,8 @@ public class AkkaDanyo {
                 throw new IllegalArgumentException("Invalid Number of Argument!!!!");
             }
             final DejikoProvider provider = DejikoProviderFactory.providerByName(args[0]);
-            final int retval = provider.downLoadDejikoAt("dejiko");
-            System.out.println(retval);
+            provider.downLoadDejikoAt("dejiko");
+            System.out.println("complete");
         } catch (Exception e) {
             System.err.println(e.getMessage());
             System.exit(-1);
