@@ -11,3 +11,8 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 
 libraryDependencies +=
   "com.typesafe.akka" %% "akka-actor" % "2.3.6"
+
+libraryDependencies ++= Seq(
+  "com.github.scala-incubator.io" %% "scala-io-core" % "0.4.2",
+  "com.github.scala-incubator.io" %% "scala-io-file" % "0.4.2"
+)
