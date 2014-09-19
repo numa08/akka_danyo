@@ -19,11 +19,17 @@ class PixivProvider extends DejikoProvider{
   override def downloadImageAt(path: String): Unit = {
     new File(path).mkdir
     implicit val system = ActorSystem.create("pixivDownloaderByScala")
+    // 部分適応と関数合成によって、CSVのURLリストを引数に、画像をダウンロードする関数
+    // downloadedImages を生成する
     val downloadAt = downloadImages(path, _ : List[String])
     val downloadedImages = downloadAt.compose(acquireURLsFromURL)
+
     val urls = (for(i <- 1 to 5) yield {
       s"http://spapi.pixiv.net/iphone/search.php?&s_mode=s_tag&word=%E3%81%A7%E3%81%98%E3%81%93&PHPSESSID=0&p=$i"
     }).toList
+
+    // 画像のダウンロードの実施。関数合成を利用したので
+    // csvのダウンロード -> 画像のダウンロードが行われる
     val images = downloadedImages(urls)
     println("downloaded images ars ")
     images.collect{
